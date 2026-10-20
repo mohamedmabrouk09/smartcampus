@@ -2,4 +2,8 @@
 *.pyc
 .venv/
 .pytest_cache/
+target/
+.idea/
+*.class
 .env
+SmartCampus.iml
