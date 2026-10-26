@@ -1,0 +1,51 @@
+name: smartcampus
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smartcampus:1.0
+    container_name: smartcampus-api
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=smartcampus
+      - DB_USER=smartcampus
+      - DB_PASSWORD=smartcampus
+    volumes:
+      - smartcampus_data:/app/data
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -qO- http://localhost:${PORT:-8080}/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: smartcampus-postgres
+    environment:
+      - POSTGRES_DB=smartcampus
+      - POSTGRES_USER=smartcampus
+      - POSTGRES_PASSWORD=smartcampus
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartcampus -d smartcampus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  smartcampus_data:
+  postgres_data:
