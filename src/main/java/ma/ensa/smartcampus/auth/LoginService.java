@@ -3,7 +3,7 @@ package ma.ensa.smartcampus.auth;
 import java.util.Map;
 
 public class LoginService {
-    private static final String DOMAINE_INSTITUTIONNEL = "@usms.ac.ma";
+    static final String DOMAINE_INSTITUTIONNEL = "@usms.ac.ma";
 
     // Comptes simulés (pas de base de données)
     private final Map<String, String> comptes =

@@ -11,21 +11,20 @@ services:
       - "8080:8080"
     environment:
       - PORT=8080
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=smartcampus
+      - DB_URL=jdbc:postgresql://postgres:5432/smartcampus
       - DB_USER=smartcampus
       - DB_PASSWORD=smartcampus
     volumes:
       - smartcampus_data:/app/data
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "sh", "-c", "wget -qO- http://localhost:${PORT:-8080}/health"]
       interval: 30s
       timeout: 5s
-      start_period: 15s
+      start_period: 20s
       retries: 3
 
   postgres:
@@ -37,6 +36,7 @@ services:
       - POSTGRES_PASSWORD=smartcampus
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     restart: unless-stopped

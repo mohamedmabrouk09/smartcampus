@@ -1,21 +1,57 @@
 ﻿# SmartCampus
 
-TP2 - Versionnement et collaboration avec Git et GitHub
+TP2 — Versionnement et collaboration avec Git et GitHub
+TP4 — Conteneurisation avec Docker et Docker Compose
 
 ## Objectif
-Utiliser Git, GitHub et Jira pour developper
-une fonctionnalite de connexion.
+Utiliser Git, GitHub, Jira, Jenkins, Docker et Docker Compose pour déployer
+une API Java (HTTP) avec son service d'authentification et sa base PostgreSQL.
 
 ## Ticket Jira
-SC-11 : Implementer LoginService
+- SC-11 : Implementer LoginService
+- TP4 : Chaîne DevOps complète (Jenkins → Docker → Compose)
 
 ## Technologies
-- Python
-- unittest
-- Git
-- GitHub
+- Java 17 (Maven)
+- JUnit 5
+- PostgreSQL 15 (pilote JDBC)
+- Docker / Docker Compose
+- Jenkins
+- Git / GitHub
 
 ## Structure
-- src : code source
-- tests : tests unitaires
-- docs : documentation
+- `src/main/java/...` : code source (API HTTP + LoginService + UserService JDBC)
+- `src/test/java/...` : tests unitaires
+- `docs/` : documentation
+- `docker/init.sql` : initialisation de la base de données
+- `Dockerfile` : image conteneur
+- `compose.yaml` : orchestration API + PostgreSQL
+- `Jenkinsfile` : pipeline CI (build → test → docker build)
+
+## Lancer l'application
+
+```bash
+# 1. Build Maven (JAR exécutable)
+mvn -B clean package -DskipTests
+
+# 2. Build de l'image Docker
+docker build -t smartcampus:1.0 .
+
+# 3. Lancer avec Docker Compose (API + PostgreSQL)
+docker compose up -d --build
+```
+
+Endpoints :
+- `GET /health` → `{"status":"UP"}`
+- `GET /login?email=...&password=...` → `{"login":true|false}`
+- `GET /` → `{"service":"SmartCampus","version":"1.0"}`
+
+## Chaîne DevOps (Jenkins)
+
+1. `Checkout` — checkout SCM
+2. `Build` — `mvn -B clean package -DskipTests`
+3. `Test` — `mvn -B test`
+4. `Docker Build` — `docker build -t smartcampus:1.0 .`
+5. `archiveArtifacts` — sauvegarde `target/smartcampus.jar`
+
+Diagnostiquer les erreurs : `docker compose logs -f`
