@@ -1,8 +1,6 @@
 name: smartcampus
 
 # Variables d'environnement partagées (copier .env.example vers .env pour les adapter)
-env_file:
-  - .env
 
 services:
   api:
