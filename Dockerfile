@@ -1,7 +1,17 @@
 # syntax=docker/dockerfile:1
 # Build : docker build --build-arg VERSION=1.0 -t smartcampus:1.0 .
-ARG VERSION=1.0
+FROM maven:3.9-eclipse-temurin-17 AS build
+
+WORKDIR /build
+
+COPY pom.xml .
+RUN mvn -B dependency:go-offline
+
+COPY src ./src
+RUN mvn -B clean package -DskipTests
+
 FROM eclipse-temurin:17-jre-alpine AS base
+ARG VERSION=1.0
 
 WORKDIR /app
 
@@ -15,8 +25,8 @@ LABEL org.opencontainers.image.created="1970-01-01T00:00:00Z"
 # Création d'un utilisateur non root pour la sécurité
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# JAR produit par Jenkins (mvn clean package)
-COPY target/smartcampus.jar /app/smartcampus.jar
+# JAR produit par Maven dans l'étape de build
+COPY --from=build /build/target/smartcampus.jar /app/smartcampus.jar
 
 # Données nécessaires à l'application
 VOLUME ["/app/data"]

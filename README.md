@@ -31,14 +31,12 @@ une API Java (HTTP) avec son service d'authentification et sa base PostgreSQL.
 ## Lancer l'application
 
 ```bash
-# 1. Build Maven (JAR exécutable)
-mvn -B clean package -DskipTests
-
-# 2. Build de l'image Docker
-docker build -t smartcampus:1.0 .
-
-# 3. Lancer avec Docker Compose (API + PostgreSQL)
+# Build the image and launch the API + PostgreSQL.
+# The Dockerfile runs the Maven build automatically.
 docker compose up -d --build
+
+# Alternatively, build and run the image directly:
+# docker build -t smartcampus:1.0 .
 ```
 
 Endpoints :
