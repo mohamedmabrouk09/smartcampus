@@ -6,4 +6,6 @@ target/
 .idea/
 *.class
 .env
+.env.*
+!.env.example
 SmartCampus.iml

@@ -1,0 +1,231 @@
+# SmartCampus — Kubernetes manifests (TP4+ / preparation for TP5)
+#
+# Ce répertoire contient les manifestes Kubernetes pour déployer
+# l'API SmartCampus et son service PostgreSQL.
+# À utiliser après Docker Compose (TP4) comme prochain step de la chaîne DevOps.
+
+---
+# Namespace dédié au projet
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smartcampus
+  labels:
+    app: smartcampus
+    tp: "4"
+
+---
+# ConfigMap — configuration non sensible de l'API
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smartcampus-config
+  namespace: smartcampus
+data:
+  PORT: "8080"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "smartcampus"
+
+---
+# Secret — identifiants sensibles (à remplacer par un réel secret en production)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: smartcampus-secrets
+  namespace: smartcampus
+type: Opaque
+stringData:
+  DB_USER: "smartcampus"
+  DB_PASSWORD: "smartcampus"
+
+---
+# Deployment de l'API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartcampus-api
+  namespace: smartcampus
+  labels:
+    app: smartcampus
+    tier: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smartcampus
+      tier: api
+  template:
+    metadata:
+      labels:
+        app: smartcampus
+        tier: api
+    spec:
+      containers:
+        - name: api
+          image: smartcampus:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: smartcampus-config
+            - secretRef:
+                name: smartcampus-secrets
+          env:
+            - name: DB_URL
+              value: "jdbc:postgresql://postgres:5432/smartcampus"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 2
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: smartcampus-data
+
+---
+# Service — exposition de l'API
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartcampus-api
+  namespace: smartcampus
+spec:
+  selector:
+    app: smartcampus
+    tier: api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
+
+---
+# Deployment PostgreSQL
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: smartcampus
+  labels:
+    app: smartcampus
+    tier: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartcampus
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: smartcampus
+        tier: database
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          envFrom:
+            - secretRef:
+                name: smartcampus-secrets
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapRef:
+                  name: smartcampus-config
+                  key: DB_NAME
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - "-U"
+                - "smartcampus"
+                - "-d"
+                - "smartcampus"
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: postgres-data
+
+---
+# Service PostgreSQL
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: smartcampus
+spec:
+  selector:
+    app: smartcampus
+    tier: database
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP
+
+---
+# PVC — données de l'API
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: smartcampus-data
+  namespace: smartcampus
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+# PVC — données PostgreSQL
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: smartcampus
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
