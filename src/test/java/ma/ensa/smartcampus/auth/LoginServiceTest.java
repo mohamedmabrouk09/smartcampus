@@ -41,4 +41,22 @@ public class LoginServiceTest {
     public void testValidationRejectsBadEmailFormat() {
         assertFalse(loginService.validateCredentials("@usms.ac.ma", "Passw0rd!2026"));
     }
+
+        @Test
+    public void testLoginMessageSuccess() {
+        assertEquals("Connexion réussie",
+                loginService.login("etudiant@usms.ac.ma", "Passw0rd!2026"));
+    }
+
+    @Test
+    public void testLoginMessageWrongDomain() {
+        assertEquals("Email institutionnel (@usms.ac.ma) requis",
+                loginService.login("etudiant@gmail.com", "Passw0rd!2026"));
+    }
+
+    @Test
+    public void testLoginMessageWrongPassword() {
+        assertEquals("Identifiants incorrects",
+                loginService.login("etudiant@usms.ac.ma", "faux"));
+    }
 }

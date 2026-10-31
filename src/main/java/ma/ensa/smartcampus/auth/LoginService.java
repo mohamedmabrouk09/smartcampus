@@ -21,4 +21,20 @@ public class LoginService {
         }
         return password.equals(comptes.get(email));
     }
+
+        public String login(String email, String password) {
+        if (email == null || email.isBlank()) {
+            return "Email obligatoire";
+        }
+        if (!email.endsWith(DOMAINE_INSTITUTIONNEL)) {
+            return "Email institutionnel (@usms.ac.ma) requis";
+        }
+        if (password == null || password.isBlank()) {
+            return "Mot de passe obligatoire";
+        }
+        if (!authenticate(email, password)) {
+            return "Identifiants incorrects";
+        }
+        return "Connexion réussie";
+    }
 }
