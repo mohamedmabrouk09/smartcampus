@@ -42,6 +42,11 @@ public class LoginServiceTest {
         assertFalse(loginService.validateCredentials("@usms.ac.ma", "Passw0rd!2026"));
     }
 
+    @Test
+    public void testValidationRejectsShortPassword() {
+        assertFalse(loginService.validateCredentials("etudiant@usms.ac.ma", "Passw0rd!"));
+    }
+
         @Test
     public void testLoginMessageSuccess() {
         assertEquals("Connexion réussie",
