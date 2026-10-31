@@ -12,7 +12,7 @@ public class LoginService {
     public boolean validateCredentials(String email, String password) {
         return email != null && !email.isBlank()
                 && email.matches("^[\\w.+-]+@usms\\.ac\\.ma$")
-                && password != null && !password.isBlank();
+                && password != null && password.length() >= 8  && !password.isBlank();
     }
 
     public boolean authenticate(String email, String password) {
