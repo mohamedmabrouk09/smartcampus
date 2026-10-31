@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpHandler;
 import ma.ensa.smartcampus.model.User;
 import ma.ensa.smartcampus.util.DBUtil;
 import ma.ensa.smartcampus.util.SessionManager;
+import ma.ensa.smartcampus.util.HtmlUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -80,7 +81,7 @@ public class EtudiantDashboardHandler implements HttpHandler {
     <div class="header">
         <h1>🎓 SmartCampus - Espace Étudiant</h1>
         <div class="user-info">
-            <span class="user-badge">👨‍🎓 """).append(user.getNomComplet()).append(" | ").append(user.getFiliere()).append(" - ").append(user.getGroupe()).append("""
+            <span class="user-badge">👨‍🎓 """).append(HtmlUtil.esc(user.getNomComplet())).append(" | ").append(HtmlUtil.esc(user.getFiliere())).append(" - ").append(HtmlUtil.esc(user.getGroupe())).append("""
 </span>
             <a href="/logout" class="logout">Déconnexion</a>
         </div>
@@ -88,7 +89,8 @@ public class EtudiantDashboardHandler implements HttpHandler {
     
     <div class="container">
         <div class="welcome">
-            <h2>Bienvenue, """).append(user.getPrenom()).append(""" !</h2>
+            <h2>Bienvenue, """).append(HtmlUtil.esc(user.getPrenom())).append("""
+&nbsp;!</h2>
             <p>Consultez votre emploi du temps, vos examens, vos notes et vos annonces depuis votre espace personnel.</p>
         </div>
         
@@ -114,14 +116,15 @@ public class EtudiantDashboardHandler implements HttpHandler {
             while (rs.next()) {
                 hasEdt = true;
                 html.append("                    <div class='item'>\n");
-                html.append("                        <div class='item-title'>").append(rs.getString("intitule")).append(" (").append(rs.getString("code")).append(")</div>\n");
-                html.append("                        <div class='item-detail'>📆 ").append(rs.getString("jour")).append(" | ⏰ ").append(rs.getString("heure_debut")).append(" - ").append(rs.getString("heure_fin")).append(" | 🏛️ ").append(rs.getString("salle")).append(" | <span class='badge'>").append(rs.getString("type_seance")).append("</span></div>\n");
+                html.append("                        <div class='item-title'>").append(HtmlUtil.esc(rs.getString("intitule"))).append(" (").append(HtmlUtil.esc(rs.getString("code"))).append(")</div>\n");
+                html.append("                        <div class='item-detail'>📆 ").append(HtmlUtil.esc(rs.getString("jour"))).append(" | ⏰ ").append(HtmlUtil.esc(rs.getString("heure_debut"))).append(" - ").append(HtmlUtil.esc(rs.getString("heure_fin"))).append(" | 🏛️ ").append(HtmlUtil.esc(rs.getString("salle"))).append(" | <span class='badge'>").append(HtmlUtil.esc(rs.getString("type_seance"))).append("</span></div>\n");
                 html.append("                    </div>\n");
             }
             if (!hasEdt) {
                 html.append("                    <p style='color:#666;'>Aucun cours programmé</p>\n");
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             html.append("                    <p style='color:#666;'>Erreur de chargement</p>\n");
         }
         
@@ -149,14 +152,15 @@ public class EtudiantDashboardHandler implements HttpHandler {
             while (rs.next()) {
                 hasExam = true;
                 html.append("                    <div class='item' style='border-left-color: #ff6b6b; background: #fff5f5;'>\n");
-                html.append("                        <div class='item-title'>").append(rs.getString("intitule")).append(" - ").append(rs.getString("type_examen")).append("</div>\n");
-                html.append("                        <div class='item-detail'>📅 ").append(rs.getDate("date_examen")).append(" | ⏰ ").append(rs.getString("heure_debut")).append(" - ").append(rs.getString("heure_fin")).append(" | 🏛️ ").append(rs.getString("salle")).append("</div>\n");
+                html.append("                        <div class='item-title'>").append(HtmlUtil.esc(rs.getString("intitule"))).append(" - ").append(HtmlUtil.esc(rs.getString("type_examen"))).append("</div>\n");
+                html.append("                        <div class='item-detail'>📅 ").append(rs.getDate("date_examen")).append(" | ⏰ ").append(HtmlUtil.esc(rs.getString("heure_debut"))).append(" - ").append(HtmlUtil.esc(rs.getString("heure_fin"))).append(" | 🏛️ ").append(HtmlUtil.esc(rs.getString("salle"))).append("</div>\n");
                 html.append("                    </div>\n");
             }
             if (!hasExam) {
                 html.append("                    <p style='color:#666;'>Aucun examen programmé</p>\n");
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             html.append("                    <p style='color:#666;'>Erreur de chargement</p>\n");
         }
         
@@ -183,7 +187,7 @@ public class EtudiantDashboardHandler implements HttpHandler {
             while (rs.next()) {
                 hasNotes = true;
                 html.append("                    <div class='note'>\n");
-                html.append("                        <div><strong>").append(rs.getString("intitule")).append("</strong> (").append(rs.getString("code")).append(")<br><small>CC: ").append(rs.getDouble("note_cc")).append(" | TP: ").append(rs.getDouble("note_tp")).append(" | Examen: ").append(rs.getDouble("note_examen")).append("</small></div>\n");
+                html.append("                        <div><strong>").append(HtmlUtil.esc(rs.getString("intitule"))).append("</strong> (").append(HtmlUtil.esc(rs.getString("code"))).append(")<br><small>CC: ").append(rs.getDouble("note_cc")).append(" | TP: ").append(rs.getDouble("note_tp")).append(" | Examen: ").append(rs.getDouble("note_examen")).append("</small></div>\n");
                 html.append("                        <div class='note-value'>").append(String.format("%.2f", rs.getDouble("note_finale"))).append("/20</div>\n");
                 html.append("                    </div>\n");
             }
@@ -191,6 +195,7 @@ public class EtudiantDashboardHandler implements HttpHandler {
                 html.append("                    <p style='color:#666;'>Aucune note disponible</p>\n");
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             html.append("                    <p style='color:#666;'>Erreur de chargement</p>\n");
         }
         
@@ -216,14 +221,15 @@ public class EtudiantDashboardHandler implements HttpHandler {
             while (rs.next()) {
                 hasAnn = true;
                 html.append("                    <div class='item'>\n");
-                html.append("                        <div class='item-title'>📌 ").append(rs.getString("titre")).append("</div>\n");
-                html.append("                        <div class='item-detail'>").append(rs.getString("contenu")).append("<br><small>Par ").append(rs.getString("prenom") != null ? rs.getString("prenom") + " " + rs.getString("nom") : "Administration").append(" | ").append(rs.getTimestamp("date_creation")).append("</small></div>\n");
+                html.append("                        <div class='item-title'>📌 ").append(HtmlUtil.esc(rs.getString("titre"))).append("</div>\n");
+                html.append("                        <div class='item-detail'>").append(HtmlUtil.esc(rs.getString("contenu"))).append("<br><small>Par ").append(rs.getString("prenom") != null ? HtmlUtil.esc(rs.getString("prenom") + " " + rs.getString("nom")) : "Administration").append(" | ").append(rs.getTimestamp("date_creation")).append("</small></div>\n");
                 html.append("                    </div>\n");
             }
             if (!hasAnn) {
                 html.append("                    <p style='color:#666;'>Aucune annonce</p>\n");
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             html.append("                    <p style='color:#666;'>Erreur de chargement</p>\n");
         }
         

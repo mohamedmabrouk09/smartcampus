@@ -5,12 +5,12 @@ import com.sun.net.httpserver.HttpHandler;
 import ma.ensa.smartcampus.model.User;
 import ma.ensa.smartcampus.util.DBUtil;
 import ma.ensa.smartcampus.util.SessionManager;
+import ma.ensa.smartcampus.util.HtmlUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -91,7 +91,8 @@ public class AdminDashboardHandler implements HttpHandler {
     <div class="header">
         <h1>⚙️ SmartCampus - Espace Administrateur</h1>
         <div class="user-info">
-            <span class="user-badge">👑 Admin: """).append(user.getNomComplet()).append("""</span>
+            <span class="user-badge">👑 Admin: """).append(HtmlUtil.esc(user.getNomComplet())).append("""
+</span>
             <a href="/logout" class="logout">Déconnexion</a>
         </div>
     </div>
@@ -115,7 +116,10 @@ public class AdminDashboardHandler implements HttpHandler {
             if (rs.next()) html.append("            <div class='stat-card'><div class='stat-label'>COURS</div><div class='stat-number'>").append(rs.getInt("c")).append("</div></div>\n");
             rs = conn.createStatement().executeQuery("SELECT COUNT(*) as c FROM examens");
             if (rs.next()) html.append("            <div class='stat-card'><div class='stat-label'>EXAMENS</div><div class='stat-number'>").append(rs.getInt("c")).append("</div></div>\n");
-        } catch (SQLException e) {}
+        } catch (SQLException e) {
+            e.printStackTrace();
+            html.append("            <p style='color:#666;'>Erreur de chargement</p>\n");
+        }
         
         html.append("""
         </div>
@@ -143,20 +147,23 @@ public class AdminDashboardHandler implements HttpHandler {
             ResultSet rs = conn.createStatement().executeQuery("SELECT nom, prenom, email, role, filiere, groupe FROM users ORDER BY role, nom");
             while (rs.next()) {
                 String role = rs.getString("role");
-                String badgeClass = switch(role) {
+                String badgeClass = switch (role) {
                     case "ETUDIANT" -> "badge-etudiant";
                     case "PROFESSEUR" -> "badge-prof";
                     case "ADMINISTRATEUR" -> "badge-admin";
                     default -> "";
                 };
                 html.append("                            <tr>\n");
-                html.append("                                <td>").append(rs.getString("prenom")).append(" ").append(rs.getString("nom")).append("</td>\n");
-                html.append("                                <td>").append(rs.getString("email")).append("</td>\n");
-                html.append("                                <td><span class='badge ").append(badgeClass).append("'>").append(role).append("</span></td>\n");
-                html.append("                                <td>").append(rs.getString("filiere") != null ? rs.getString("filiere") + " - " + (rs.getString("groupe") != null ? rs.getString("groupe") : "") : "-").append("</td>\n");
+                html.append("                                <td>").append(HtmlUtil.esc(rs.getString("prenom"))).append(" ").append(HtmlUtil.esc(rs.getString("nom"))).append("</td>\n");
+                html.append("                                <td>").append(HtmlUtil.esc(rs.getString("email"))).append("</td>\n");
+                html.append("                                <td><span class='badge ").append(badgeClass).append("'>").append(HtmlUtil.esc(role)).append("</span></td>\n");
+                html.append("                                <td>").append(rs.getString("filiere") != null ? HtmlUtil.esc(rs.getString("filiere") + " - " + (rs.getString("groupe") != null ? rs.getString("groupe") : "")) : "-").append("</td>\n");
                 html.append("                            </tr>\n");
             }
-        } catch (SQLException e) {}
+        } catch (SQLException e) {
+            e.printStackTrace();
+            html.append("                            <tr><td colspan='4' style='text-align:center; color:#666;'>Erreur de chargement</td></tr>\n");
+        }
         
         html.append("""
                         </tbody>
@@ -177,11 +184,14 @@ public class AdminDashboardHandler implements HttpHandler {
             ResultSet rs = conn.createStatement().executeQuery(sql);
             while (rs.next()) {
                 html.append("                    <div class='item'>\n");
-                html.append("                        <div class='item-title'>").append(rs.getString("intitule")).append(" (").append(rs.getString("code")).append(")</div>\n");
-                html.append("                        <div class='item-detail'>🎓 ").append(rs.getString("filiere")).append(" | Semestre ").append(rs.getString("semestre")).append(" | 👨‍🏫 Prof: ").append(rs.getString("prenom") != null ? rs.getString("prenom") + " " + rs.getString("nom") : "Non assigné").append("</div>\n");
+                html.append("                        <div class='item-title'>").append(HtmlUtil.esc(rs.getString("intitule"))).append(" (").append(HtmlUtil.esc(rs.getString("code"))).append(")</div>\n");
+                html.append("                        <div class='item-detail'>🎓 ").append(HtmlUtil.esc(rs.getString("filiere"))).append(" | Semestre ").append(HtmlUtil.esc(rs.getString("semestre"))).append(" | 👨‍🏫 Prof: ").append(rs.getString("prenom") != null ? HtmlUtil.esc(rs.getString("prenom") + " " + rs.getString("nom")) : "Non assigné").append("</div>\n");
                 html.append("                    </div>\n");
             }
-        } catch (SQLException e) {}
+        } catch (SQLException e) {
+            e.printStackTrace();
+            html.append("                    <p style='color:#666;'>Erreur de chargement</p>\n");
+        }
         
         html.append("""
                 </div>
@@ -201,11 +211,14 @@ public class AdminDashboardHandler implements HttpHandler {
             ResultSet rs = conn.createStatement().executeQuery(sql);
             while (rs.next()) {
                 html.append("                    <div class='item' style='border-left-color: #ff6b6b; background: #fff5f5;'>\n");
-                html.append("                        <div class='item-title'>").append(rs.getString("intitule")).append(" - ").append(rs.getString("type_examen")).append("</div>\n");
-                html.append("                        <div class='item-detail'>📅 ").append(rs.getDate("date_examen")).append(" | ⏰ ").append(rs.getString("heure_debut")).append(" - ").append(rs.getString("heure_fin")).append(" | 🏛️ ").append(rs.getString("salle")).append(" | ").append(rs.getString("filiere")).append(" ").append(rs.getString("groupe") != null ? rs.getString("groupe") : "").append("</div>\n");
+                html.append("                        <div class='item-title'>").append(HtmlUtil.esc(rs.getString("intitule"))).append(" - ").append(HtmlUtil.esc(rs.getString("type_examen"))).append("</div>\n");
+                html.append("                        <div class='item-detail'>📅 ").append(rs.getDate("date_examen")).append(" | ⏰ ").append(HtmlUtil.esc(rs.getString("heure_debut"))).append(" - ").append(HtmlUtil.esc(rs.getString("heure_fin"))).append(" | 🏛️ ").append(HtmlUtil.esc(rs.getString("salle"))).append(" | ").append(HtmlUtil.esc(rs.getString("filiere"))).append(" ").append(HtmlUtil.esc(rs.getString("groupe"))).append("</div>\n");
                 html.append("                    </div>\n");
             }
-        } catch (SQLException e) {}
+        } catch (SQLException e) {
+            e.printStackTrace();
+            html.append("                    <p style='color:#666;'>Erreur de chargement</p>\n");
+        }
         
         html.append("""
                 </div>
@@ -224,19 +237,22 @@ public class AdminDashboardHandler implements HttpHandler {
             ResultSet rs = conn.createStatement().executeQuery(sql);
             while (rs.next()) {
                 html.append("                    <div class='item' style='border-left-color: #4dabf7; background: #f0f9ff;'>\n");
-                html.append("                        <div class='item-title'>🎯 ").append(rs.getString("titre")).append("</div>\n");
-                html.append("                        <div class='item-detail'>📅 ").append(rs.getDate("date_reunion")).append(" | ⏰ ").append(rs.getString("heure_debut")).append(" - ").append(rs.getString("heure_fin")).append(" | 🏛️ ").append(rs.getString("salle")).append(" | Organisé par Prof. ").append(rs.getString("prenom")).append(" ").append(rs.getString("nom")).append("</div>\n");
+                html.append("                        <div class='item-title'>🎯 ").append(HtmlUtil.esc(rs.getString("titre"))).append("</div>\n");
+                html.append("                        <div class='item-detail'>📅 ").append(rs.getDate("date_reunion")).append(" | ⏰ ").append(HtmlUtil.esc(rs.getString("heure_debut"))).append(" - ").append(HtmlUtil.esc(rs.getString("heure_fin"))).append(" | 🏛️ ").append(HtmlUtil.esc(rs.getString("salle"))).append(" | Organisé par Prof. ").append(HtmlUtil.esc(rs.getString("prenom"))).append(" ").append(HtmlUtil.esc(rs.getString("nom"))).append("</div>\n");
                 html.append("                    </div>\n");
             }
             html.append("                    <hr style='margin:15px 0; border:none; border-top:1px solid #eee;'><p style='font-weight:600; margin-bottom:10px; color:#333;'>📢 Dernières Annonces</p>\n");
             rs = conn.createStatement().executeQuery("SELECT titre, contenu, cible, date_creation FROM annonces ORDER BY date_creation DESC LIMIT 3");
             while (rs.next()) {
                 html.append("                    <div class='item'>\n");
-                html.append("                        <div class='item-title'>📌 ").append(rs.getString("titre")).append(" <span class='badge' style='background:#f1f3f5; color:#495057;'>").append(rs.getString("cible")).append("</span></div>\n");
-                html.append("                        <div class='item-detail'>").append(rs.getString("contenu")).append("<br><small>").append(rs.getTimestamp("date_creation")).append("</small></div>\n");
+                html.append("                        <div class='item-title'>📌 ").append(HtmlUtil.esc(rs.getString("titre"))).append(" <span class='badge' style='background:#f1f3f5; color:#495057;'>").append(HtmlUtil.esc(rs.getString("cible"))).append("</span></div>\n");
+                html.append("                        <div class='item-detail'>").append(HtmlUtil.esc(rs.getString("contenu"))).append("<br><small>").append(rs.getTimestamp("date_creation")).append("</small></div>\n");
                 html.append("                    </div>\n");
             }
-        } catch (SQLException e) {}
+        } catch (SQLException e) {
+            e.printStackTrace();
+            html.append("                    <p style='color:#666;'>Erreur de chargement</p>\n");
+        }
         
         html.append("""
                 </div>
