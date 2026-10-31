@@ -27,4 +27,18 @@ public class LoginServiceTest {
         boolean result = loginService.authenticate("etudiant@gmail.com", "Passw0rd!2026");
         assertFalse(result, "La connexion devrait échouer si le domaine n'est pas @usms.ac.ma.");
     }
+        @Test
+    public void testValidationRejectsBlankEmail() {
+        assertFalse(loginService.validateCredentials("  ", "Passw0rd!2026"));
+    }
+
+    @Test
+    public void testValidationRejectsNullPassword() {
+        assertFalse(loginService.validateCredentials("etudiant@usms.ac.ma", null));
+    }
+
+    @Test
+    public void testValidationRejectsBadEmailFormat() {
+        assertFalse(loginService.validateCredentials("@usms.ac.ma", "Passw0rd!2026"));
+    }
 }
