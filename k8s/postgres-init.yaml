@@ -1,0 +1,103 @@
+apiVersion: v1
+data:
+  init.sql: "-- Initialisation compl├¿te de la base de donn├⌐es SmartCampus\r\n-- R├┤les:
+    ETUDIANT, PROFESSEUR, ADMINISTRATEUR\r\n\r\nCREATE TABLE IF NOT EXISTS users (\r\n
+    \   id SERIAL PRIMARY KEY,\r\n    email VARCHAR(255) NOT NULL UNIQUE,\r\n    password
+    VARCHAR(255) NOT NULL,\r\n    role VARCHAR(20) NOT NULL CHECK (role IN ('ETUDIANT','PROFESSEUR','ADMINISTRATEUR')),\r\n
+    \   nom VARCHAR(100),\r\n    prenom VARCHAR(100),\r\n    filiere VARCHAR(100),\r\n
+    \   groupe VARCHAR(50)\r\n);\r\n\r\n-- Cours\r\nCREATE TABLE IF NOT EXISTS cours
+    (\r\n    id SERIAL PRIMARY KEY,\r\n    intitule VARCHAR(150) NOT NULL,\r\n    code
+    VARCHAR(20) UNIQUE NOT NULL,\r\n    filiere VARCHAR(100) NOT NULL,\r\n    semestre
+    VARCHAR(10) NOT NULL,\r\n    prof_id INTEGER REFERENCES users(id) ON DELETE SET
+    NULL\r\n);\r\n\r\n-- Emploi du temps\r\nCREATE TABLE IF NOT EXISTS emploi_du_temps
+    (\r\n    id SERIAL PRIMARY KEY,\r\n    cours_id INTEGER REFERENCES cours(id) ON
+    DELETE CASCADE,\r\n    jour VARCHAR(10) NOT NULL CHECK (jour IN ('LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI')),\r\n
+    \   heure_debut TIME NOT NULL,\r\n    heure_fin TIME NOT NULL,\r\n    salle VARCHAR(50),\r\n
+    \   type_seance VARCHAR(10) CHECK (type_seance IN ('COURS','TD','TP'))\r\n);\r\n\r\n--
+    Examens\r\nCREATE TABLE IF NOT EXISTS examens (\r\n    id SERIAL PRIMARY KEY,\r\n
+    \   cours_id INTEGER REFERENCES cours(id) ON DELETE CASCADE,\r\n    filiere VARCHAR(100)
+    NOT NULL,\r\n    groupe VARCHAR(50),\r\n    date_examen DATE NOT NULL,\r\n    heure_debut
+    TIME NOT NULL,\r\n    heure_fin TIME NOT NULL,\r\n    salle VARCHAR(50),\r\n    type_examen
+    VARCHAR(15) CHECK (type_examen IN ('PARTIEL','CONTROLE','EXAMEN_FINAL'))\r\n);\r\n\r\n--
+    Notes\r\nCREATE TABLE IF NOT EXISTS notes (\r\n    id SERIAL PRIMARY KEY,\r\n
+    \   etudiant_id INTEGER REFERENCES users(id) ON DELETE CASCADE,\r\n    cours_id
+    INTEGER REFERENCES cours(id) ON DELETE CASCADE,\r\n    note_cc NUMERIC(4,2),\r\n
+    \   note_tp NUMERIC(4,2),\r\n    note_examen NUMERIC(4,2),\r\n    note_finale
+    NUMERIC(4,2),\r\n    UNIQUE(etudiant_id, cours_id)\r\n);\r\n\r\n-- R├⌐unions /
+    Rendez-vous\r\nCREATE TABLE IF NOT EXISTS reunions (\r\n    id SERIAL PRIMARY
+    KEY,\r\n    prof_id INTEGER REFERENCES users(id) ON DELETE CASCADE,\r\n    titre
+    VARCHAR(150) NOT NULL,\r\n    description TEXT,\r\n    date_reunion DATE NOT NULL,\r\n
+    \   heure_debut TIME NOT NULL,\r\n    heure_fin TIME NOT NULL,\r\n    salle VARCHAR(50),\r\n
+    \   participants VARCHAR(255)\r\n);\r\n\r\n-- Annonces\r\nCREATE TABLE IF NOT
+    EXISTS annonces (\r\n    id SERIAL PRIMARY KEY,\r\n    auteur_id INTEGER REFERENCES
+    users(id) ON DELETE SET NULL,\r\n    titre VARCHAR(150) NOT NULL,\r\n    contenu
+    TEXT NOT NULL,\r\n    cible VARCHAR(20) CHECK (cible IN ('TOUS','ETUDIANT','PROFESSEUR','ADMINISTRATEUR')),\r\n
+    \   date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP\r\n);\r\n\r\n-- Inscriptions
+    (├⌐tudiants dans cours)\r\nCREATE TABLE IF NOT EXISTS inscriptions (\r\n    id
+    SERIAL PRIMARY KEY,\r\n    etudiant_id INTEGER REFERENCES users(id) ON DELETE
+    CASCADE,\r\n    cours_id INTEGER REFERENCES cours(id) ON DELETE CASCADE,\r\n    UNIQUE(etudiant_id,
+    cours_id)\r\n);\r\n\r\n-- ===== DONN├ëES DE TEST =====\r\n\r\n-- Utilisateurs\r\nINSERT
+    INTO users (email, password, role, nom, prenom, filiere, groupe) VALUES\r\n('admin@usms.ac.ma',
+    'Passw0rd!2026', 'ADMINISTRATEUR', 'Benali', 'Karim', NULL, NULL),\r\n('prof.ahmed@usms.ac.ma',
+    'Passw0rd!2026', 'PROFESSEUR', 'El Amrani', 'Ahmed', NULL, NULL),\r\n('prof.sara@usms.ac.ma',
+    'Passw0rd!2026', 'PROFESSEUR', 'Bennis', 'Sara', NULL, NULL),\r\n('etudiant@usms.ac.ma',
+    'Passw0rd!2026', 'ETUDIANT', 'Tazi', 'Youssef', 'G├⌐nie Informatique', 'GI3-A'),\r\n('fatima@usms.ac.ma',
+    'Passw0rd!2026', 'ETUDIANT', 'Chakir', 'Fatima', 'G├⌐nie Informatique', 'GI3-A'),\r\n('omar@usms.ac.ma',
+    'Passw0rd!2026', 'ETUDIANT', 'Idrissi', 'Omar', 'R├⌐seaux & T├⌐l├⌐com', 'RT3-B')\r\nON
+    CONFLICT (email) DO NOTHING;\r\n\r\n-- Cours\r\nINSERT INTO cours (intitule, code,
+    filiere, semestre, prof_id) VALUES\r\n('G├⌐nie Logiciel', 'GL301', 'G├⌐nie Informatique',
+    'S5', (SELECT id FROM users WHERE email='prof.ahmed@usms.ac.ma')),\r\n('R├⌐seaux
+    Avanc├⌐s', 'RA301', 'R├⌐seaux & T├⌐l├⌐com', 'S5', (SELECT id FROM users WHERE email='prof.sara@usms.ac.ma')),\r\n('Bases
+    de Donn├⌐es Avanc├⌐es', 'BDA301', 'G├⌐nie Informatique', 'S5', (SELECT id FROM users
+    WHERE email='prof.ahmed@usms.ac.ma')),\r\n('Programmation Web', 'PW301', 'G├⌐nie
+    Informatique', 'S5', (SELECT id FROM users WHERE email='prof.sara@usms.ac.ma'))\r\nON
+    CONFLICT (code) DO NOTHING;\r\n\r\n-- Inscriptions\r\nINSERT INTO inscriptions
+    (etudiant_id, cours_id) VALUES\r\n((SELECT id FROM users WHERE email='etudiant@usms.ac.ma'),
+    (SELECT id FROM cours WHERE code='GL301')),\r\n((SELECT id FROM users WHERE email='etudiant@usms.ac.ma'),
+    (SELECT id FROM cours WHERE code='BDA301')),\r\n((SELECT id FROM users WHERE email='etudiant@usms.ac.ma'),
+    (SELECT id FROM cours WHERE code='PW301')),\r\n((SELECT id FROM users WHERE email='fatima@usms.ac.ma'),
+    (SELECT id FROM cours WHERE code='GL301')),\r\n((SELECT id FROM users WHERE email='fatima@usms.ac.ma'),
+    (SELECT id FROM cours WHERE code='BDA301')),\r\n((SELECT id FROM users WHERE email='omar@usms.ac.ma'),
+    (SELECT id FROM cours WHERE code='RA301'))\r\nON CONFLICT DO NOTHING;\r\n\r\n--
+    Emploi du temps\r\nINSERT INTO emploi_du_temps (cours_id, jour, heure_debut, heure_fin,
+    salle, type_seance) VALUES\r\n((SELECT id FROM cours WHERE code='GL301'), 'LUNDI',
+    '08:30', '10:30', 'Amphi A', 'COURS'),\r\n((SELECT id FROM cours WHERE code='GL301'),
+    'MARDI', '14:00', '16:00', 'TP-3', 'TP'),\r\n((SELECT id FROM cours WHERE code='BDA301'),
+    'MERCREDI', '10:45', '12:45', 'Salle B12', 'COURS'),\r\n((SELECT id FROM cours
+    WHERE code='BDA301'), 'JEUDI', '08:30', '10:30', 'TD-2', 'TD'),\r\n((SELECT id
+    FROM cours WHERE code='PW301'), 'VENDREDI', '14:00', '17:00', 'TP-1', 'TP'),\r\n((SELECT
+    id FROM cours WHERE code='RA301'), 'LUNDI', '10:45', '12:45', 'Amphi B', 'COURS')\r\nON
+    CONFLICT DO NOTHING;\r\n\r\n-- Examens\r\nINSERT INTO examens (cours_id, filiere,
+    groupe, date_examen, heure_debut, heure_fin, salle, type_examen) VALUES\r\n((SELECT
+    id FROM cours WHERE code='GL301'), 'G├⌐nie Informatique', 'GI3-A', '2026-11-10',
+    '09:00', '11:00', 'Amphi A', 'PARTIEL'),\r\n((SELECT id FROM cours WHERE code='BDA301'),
+    'G├⌐nie Informatique', 'GI3-A', '2026-11-15', '09:00', '11:00', 'Amphi C', 'PARTIEL'),\r\n((SELECT
+    id FROM cours WHERE code='PW301'), 'G├⌐nie Informatique', 'GI3-A', '2026-11-22',
+    '14:00', '16:00', 'Salle TP', 'PARTIEL'),\r\n((SELECT id FROM cours WHERE code='RA301'),
+    'R├⌐seaux & T├⌐l├⌐com', 'RT3-B', '2026-11-12', '09:00', '11:00', 'Amphi B', 'PARTIEL')\r\nON
+    CONFLICT DO NOTHING;\r\n\r\n-- Notes\r\nINSERT INTO notes (etudiant_id, cours_id,
+    note_cc, note_tp, note_examen, note_finale) VALUES\r\n((SELECT id FROM users WHERE
+    email='etudiant@usms.ac.ma'), (SELECT id FROM cours WHERE code='GL301'), 15.5,
+    16.0, 14.0, 15.0),\r\n((SELECT id FROM users WHERE email='etudiant@usms.ac.ma'),
+    (SELECT id FROM cours WHERE code='BDA301'), 14.0, 17.0, 15.5, 15.5),\r\n((SELECT
+    id FROM users WHERE email='etudiant@usms.ac.ma'), (SELECT id FROM cours WHERE
+    code='PW301'), 16.5, 18.0, 16.0, 16.8),\r\n((SELECT id FROM users WHERE email='fatima@usms.ac.ma'),
+    (SELECT id FROM cours WHERE code='GL301'), 17.0, 16.5, 17.5, 17.0)\r\nON CONFLICT
+    (etudiant_id, cours_id) DO UPDATE SET\r\n    note_cc = EXCLUDED.note_cc,\r\n    note_tp
+    = EXCLUDED.note_tp,\r\n    note_examen = EXCLUDED.note_examen,\r\n    note_finale
+    = EXCLUDED.note_finale;\r\n\r\n-- R├⌐unions\r\nINSERT INTO reunions (prof_id, titre,
+    description, date_reunion, heure_debut, heure_fin, salle, participants) VALUES\r\n((SELECT
+    id FROM users WHERE email='prof.ahmed@usms.ac.ma'), 'R├⌐union P├⌐dagogique', 'Bilan
+    mi-semestre GI', '2026-11-05', '10:00', '12:00', 'Salle Conseil', '├ëquipe P├⌐dagogique
+    GI'),\r\n((SELECT id FROM users WHERE email='prof.sara@usms.ac.ma'), 'Soutien
+    TP', 'Accompagnement projets Web', '2026-11-07', '15:00', '17:00', 'TP-1', 'Groupes
+    GI3-A')\r\nON CONFLICT DO NOTHING;\r\n\r\n-- Annonces\r\nINSERT INTO annonces
+    (auteur_id, titre, contenu, cible) VALUES\r\n((SELECT id FROM users WHERE email='admin@usms.ac.ma'),
+    'Rentr├⌐e Partielle', 'Les partiels commencent le 10 Novembre 2026. Veuillez consulter
+    vos emplois du temps.', 'TOUS'),\r\n((SELECT id FROM users WHERE email='prof.ahmed@usms.ac.ma'),
+    'Rendu TP GL', 'Le TP n┬░3 de G├⌐nie Logiciel doit ├¬tre rendu avant le 08/11/2026
+    sur la plateforme.', 'ETUDIANT')\r\nON CONFLICT DO NOTHING;\r\n"
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: postgres-init
